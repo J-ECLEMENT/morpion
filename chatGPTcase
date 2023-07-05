@@ -1,0 +1,257 @@
+class Case:
+    def __init__(self, x, y, player):
+        self.x = x
+        self.y = y
+        self.player = player
+
+
+class Player:
+    def __init__(self, type):
+        self.type = type
+
+
+class Plateau:
+    def __init__(self, cases):
+        self.cases = cases
+
+    def print(self):
+        print(self.cases[6].player + " | " + self.cases[7].player + " | " + self.cases[8].player)
+        print("---------")
+        print(self.cases[3].player + " | " + self.cases[4].player + " | " + self.cases[5].player)
+        print("---------")
+        print(self.cases[0].player + " | " + self.cases[1].player + " | " + self.cases[2].player)
+
+    def initialize():
+        listCase = [Case(0, 0, " "), Case(0, 1, " "), Case(0, 2, " "),
+                    Case(1, 0, " "), Case(1, 1, " "), Case(1, 2, " "),
+                    Case(2, 0, " "), Case(2, 1, " "), Case(2, 2, " ")]
+        return Plateau(listCase)
+
+
+def menu():
+    print("Welcome to TikTakToe from JEC")
+    print("1-Player vs Player")
+    print("2-Player vs CPU")
+    print("3-CPU vs CPU")
+    print("4-Quit")
+    choice = input("Please make a choice: ")
+    if choice == "1":
+        pvp()
+    elif choice == "2":
+        pvu()
+    elif choice == "3":
+        uvu()
+    else:
+        quit()
+
+
+def isWinning(plateau):
+    winning_combinations = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Columns
+        [0, 4, 8], [2, 4, 6]  # Diagonals
+    ]
+
+    for combination in winning_combinations:
+        positions = [plateau.cases[i].player for i in combination]
+        if all(positions[0] == pos for pos in positions) and positions[0] != " ":
+            return True
+    return False
+
+
+def play(case, player, plateau):
+    if plateau.cases[case].player == " " or player == " ":
+        plateau.cases[case].player = player
+        return plateau
+    else:
+        print("already used")
+        other_case = int(input("Choose another case: ")) - 1
+        while not (0 <= other_case < 9):
+            print("Please choose a number between 1 and 9")
+            other_case = int(input("Choose another case: ")) - 1
+        plateau = play(other_case, player, plateau)
+        return plateau
+
+
+def cpuPlay(cpu, player, plateau):
+    listCaseScore = [3, 2, 3,
+                     2, 4, 2,
+                     3, 2, 3]
+    for i, case in enumerate(plateau.cases):
+        if case.player != " ":
+            listCaseScore[i] = 0
+        else:
+            plateau = play(i, cpu, plateau)
+            if isWinning(plateau):
+                listCaseScore[i] += 1000
+            plateau = play(i, " ", plateau)
+            plateau = play(i, player, plateau)
+            if isWinning(plateau):
+                listCaseScore[i] += 500
+            plateau = play(i, " ", plateau)
+
+            # Special anti-trap! Prevent the CPU from falling into a trap
+            if plateau.cases[0].player == plateau.cases[8].player == player:
+                listCaseScore[2] -= 2
+                listCaseScore[6] -= 2
+            if plateau.cases[2].player == plateau.cases[6].player == player:
+                listCaseScore[0] -= 2
+                listCaseScore[8] -= 2
+            if plateau.cases[7].player == plateau.cases[5].player == player:
+                listCaseScore[0] -= 2
+            if plateau.cases[7].player == plateau.cases[2].player == player:
+                listCaseScore[0] -= 2
+            if plateau.cases[6].player == plateau.cases[5].player == player:
+                listCaseScore[0] -= 2
+
+    maxScore = max(listCaseScore)
+    maxIndex = listCaseScore.index(maxScore)
+    plateau = play(maxIndex, cpu, plateau)
+
+    print("let's go")
+    return plateau
+
+
+def who_start():
+    whoPlay = input("Choose who starts (1 for player 1, 2 for player 2 or CPU): ")
+    if whoPlay == "1":
+        return True
+    elif whoPlay == "2":
+        return False
+    else:
+        print("Please choose 1 or 2")
+        return who_start()
+
+
+def explain_rule():
+    print("7 | 8 | 9")
+    print("---------")
+    print("4 | 5 | 6")
+    print("---------")
+    print("1 | 2 | 3")
+
+
+def pvp():
+    plateau = Plateau.initialize()
+    player1 = Player("X")
+    player2 = Player("O")
+    par = 0
+
+    whoplay = who_start()
+    explain_rule()
+    while par != 9:
+        if whoplay:
+            casePlay = int(input("Player 1 choose a case: ")) - 1
+            while not (0 <= casePlay < 9):
+                print("Please choose a number between 1 and 9")
+                casePlay = int(input("Player 1 choose a case: ")) - 1
+            plateau = play(casePlay, player1.type, plateau)
+            plateau.print()
+            if isWinning(plateau):
+                print("Player 1 wins!")
+                input()
+                menu()
+        else:
+            casePlay = int(input("Player 2 choose a case: ")) - 1
+            while not (0 <= casePlay < 9):
+                print("Please choose a number between 1 and 9")
+                casePlay = int(input("Player 2 choose a case: ")) - 1
+            plateau = play(casePlay, player2.type, plateau)
+            plateau.print()
+            if isWinning(plateau):
+                print("Player 2 wins!")
+                input()
+                menu()
+
+        whoplay = not whoplay
+        par += 1
+
+    print("It's a draw!")
+    input()
+    menu()
+
+
+def pvu():
+    plateau = Plateau.initialize()
+    player = Player("X")
+    cpu = Player("O")
+    par = 0
+    whoplay = who_start()
+    explain_rule()
+    while par != 9:
+        if whoplay:
+            casePlay = int(input("Player choose a case: ")) - 1
+            while not (0 <= casePlay < 9):
+                print("Please choose a number between 1 and 9")
+                casePlay = int(input("Player choose a case: ")) - 1
+            plateau = play(casePlay, player.type, plateau)
+            plateau.print()
+            if isWinning(plateau):
+                print("Player wins!")
+                input()
+                menu()
+        else:
+            print("CPU's turn")
+            plateau = cpuPlay(cpu.type, player.type, plateau)
+            plateau.print()
+            if isWinning(plateau):
+                print("CPU wins!")
+                input()
+                menu()
+
+        whoplay = not whoplay
+        par += 1
+
+    print("It's a draw!")
+    input()
+    menu()
+
+
+def uvu():
+    print("The CPU will try every possibility")
+    listCase = [Case(0, 0, " "), Case(0, 1, " "), Case(0, 2, " "),
+                Case(1, 0, " "), Case(1, 1, " "), Case(1, 2, " "),
+                Case(2, 0, " "), Case(2, 1, " "), Case(2, 2, " ")]
+
+    plateau = Plateau(listCase)
+    player = Player("X")
+    cpu = Player("O")
+    par = 0
+    whoplay = True
+
+    print("It's a draw!")
+    menu()
+
+
+menu()
+
+# The given code appears to be an implementation of a Tic Tac Toe game. Here is a breakdown of the code:
+
+# 1. The code defines three classes: `Case`, `Player`, and `Plateau`.
+#    - `Case` represents an individual cell on the game board, with attributes `x`, `y`, and `player`.
+#    - `Player` represents a player in the game, with an attribute `type`.
+#    - `Plateau` represents the game board and contains a list of `Case` objects.
+
+# 2. The `Plateau` class has a method named `print` that prints the current state of the game board.
+
+# 3. The `Plateau` class also has a static method named `initialize` that creates a new game board with empty cells.
+
+# 4. The `isWinning` function checks if there is a winning combination on the game board.
+
+# 5. The `play` function allows a player to make a move by selecting a cell on the game board.
+
+# 6. The `cpuPlay` function represents the logic for the CPU player's move.
+
+# 7. The `who_start` function prompts the user to choose who starts the game: player 1, player 2, or the CPU.
+
+# 8. The `explain_rule` function provides a brief explanation of the game rules.
+
+# 9. The `pvp` function allows two human players to play against each other.
+
+# 10. The `pvu` function allows a human player to play against the CPU.
+
+# 11. The `uvu` function simulates a game between two CPU players.
+
+# 12. The `menu` function displays the main menu of the game and handles the user's choice.
+
+# Overall, the code allows players to play Tic Tac Toe either against each other or against the CPU. The CPU player uses a simple strategy to make moves based on the current state of the game board.
